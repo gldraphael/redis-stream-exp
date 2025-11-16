@@ -13,18 +13,6 @@ import (
 	"github.com/ziflex/lecho/v3"
 )
 
-type (
-	MessageRequest struct {
-		UserId    uuid.UUID `json:"userId"    validate:"required"`
-		SessionId uuid.UUID `json:"sessionId" validate:"required"`
-		Message   string    `json:"message"   validate:"required"`
-	}
-
-	ErrorResponse struct {
-		Message string `json:"message"`
-	}
-)
-
 func main() {
 
 	e := echo.New()
@@ -53,9 +41,16 @@ func main() {
 		e.Logger.Fatalf("Failed to establish a redis connection. Error: %s", err.Error())
 	}
 
-	// Endpoint to log an event
+	// Endpoint to log a message
 	e.POST("/message", func(c echo.Context) error {
-		msg := new(MessageRequest)
+
+		type PostMessageRequest struct {
+			UserId    uuid.UUID `json:"userId"    validate:"required"`
+			SessionId uuid.UUID `json:"sessionId" validate:"required"`
+			Message   string    `json:"message"   validate:"required"`
+		}
+
+		msg := new(PostMessageRequest)
 		if err := c.Bind(msg); err != nil {
 			return err
 		}
@@ -65,26 +60,31 @@ func main() {
 			SessionId: msg.SessionId,
 			Timestamp: time.Now().UnixMilli(),
 			Message:   msg.Message,
-		})
+		}, time.Hour*1)
 		return c.NoContent(http.StatusAccepted)
 	})
 
-	// Endpoint to query relevent logs
+	// Endpoint to query messages from a user session after a timestamp
 	e.GET("/message", func(c echo.Context) error {
 
-		userId, err := uuid.Parse(c.QueryParam("userId"))
-		if err != nil {
-			return c.JSON(http.StatusUnprocessableEntity, ErrorResponse{Message: "Query string userId is required."})
+		type GetMessageRequest struct {
+			UserId    uuid.UUID `query:"userId"    validate:"required"`
+			SessionId uuid.UUID `query:"sessionId" validate:"required"`
+			Timestamp int64     `query:"timestamp" validate:"required"`
 		}
 
-		sessionId, err := uuid.Parse(c.QueryParam("sessionId"))
-		if err != nil {
-			return c.JSON(http.StatusUnprocessableEntity, ErrorResponse{Message: "Query string sessionId is required."})
+		var req GetMessageRequest
+		if err := c.Bind(&req); err != nil {
+			return err
+		}
+		if req.Timestamp == 0 {
+			return echo.NewHTTPError(http.StatusUnprocessableEntity, "timestamp is required")
 		}
 
-		e.Logger.Debugf("%s %s", userId.String(), sessionId.String())
-		oneHourAgo := time.Now().Add(-time.Hour)
-		messages, err := redis.Query(userId, sessionId, oneHourAgo.UnixMilli())
+		messages, err := redis.Query(req.UserId, req.SessionId, req.Timestamp)
+		if err != nil {
+			return err
+		}
 		return c.JSON(http.StatusOK, messages)
 	})
 
