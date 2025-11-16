@@ -1,0 +1,9 @@
+name: GET Message
+url: http://localhost:1323/message
+params:
+- name: userId
+  value: 00000000-0000-0000-0000-000000000000
+- name: sessionId
+  value: 00000000-0000-0000-0000-000000000000
+- name: timestamp
+  value: '1'

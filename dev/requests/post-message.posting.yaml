@@ -1,0 +1,14 @@
+name: POST Message
+method: POST
+url: http://localhost:1323/message
+body:
+  content: |-
+    {
+      "userId":    "00000000-0000-0000-0000-000000000000",
+      "sessionId": "00000000-0000-0000-0000-000000000001",
+      "message":   "timestamped hello world"
+    }
+  content_type: application/json
+headers:
+- name: content-type
+  value: application/json
