@@ -50,18 +50,27 @@ func main() {
 			Message   string    `json:"message"   validate:"required"`
 		}
 
+		type PostMessageResponse struct {
+			Timestamp int64 `json:"timestamp"`
+		}
+
 		msg := new(PostMessageRequest)
 		if err := c.Bind(msg); err != nil {
 			return err
 		}
 
+		timestamp := time.Now().UnixMilli()
+
 		redis.AddToStream(&Message{
 			UserId:    msg.UserId,
 			SessionId: msg.SessionId,
-			Timestamp: time.Now().UnixMilli(),
+			Timestamp: timestamp,
 			Message:   msg.Message,
 		}, time.Hour*1)
-		return c.NoContent(http.StatusAccepted)
+
+		return c.JSON(http.StatusAccepted, PostMessageResponse{
+			Timestamp: timestamp,
+		})
 	})
 
 	// Endpoint to query messages from a user session after a timestamp
