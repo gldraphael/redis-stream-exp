@@ -44,17 +44,17 @@ func main() {
 	// Endpoint to log a message
 	e.POST("/message", func(c echo.Context) error {
 
-		type PostMessageRequest struct {
+		type Request struct {
 			UserId    uuid.UUID `json:"userId"    validate:"required"`
 			SessionId uuid.UUID `json:"sessionId" validate:"required"`
 			Message   string    `json:"message"   validate:"required"`
 		}
 
-		type PostMessageResponse struct {
+		type Response struct {
 			Timestamp int64 `json:"timestamp"`
 		}
 
-		msg := new(PostMessageRequest)
+		msg := new(Request)
 		if err := c.Bind(msg); err != nil {
 			return err
 		}
@@ -68,7 +68,7 @@ func main() {
 			Message:   msg.Message,
 		}, time.Hour*1)
 
-		return c.JSON(http.StatusAccepted, PostMessageResponse{
+		return c.JSON(http.StatusAccepted, Response{
 			Timestamp: timestamp,
 		})
 	})
@@ -76,13 +76,17 @@ func main() {
 	// Endpoint to query messages from a user session after a timestamp
 	e.GET("/message", func(c echo.Context) error {
 
-		type GetMessageRequest struct {
+		type Request struct {
 			UserId    uuid.UUID `query:"userId"    validate:"required"`
 			SessionId uuid.UUID `query:"sessionId" validate:"required"`
 			Timestamp int64     `query:"timestamp" validate:"required"`
 		}
 
-		var req GetMessageRequest
+		type Response struct {
+			Messages []string `json:"messages"`
+		}
+
+		var req Request
 		if err := c.Bind(&req); err != nil {
 			return err
 		}
@@ -94,7 +98,9 @@ func main() {
 		if err != nil {
 			return err
 		}
-		return c.JSON(http.StatusOK, messages)
+		return c.JSON(http.StatusOK, Response{
+			Messages: messages,
+		})
 	})
 
 	e.Logger.Fatal(e.Start(":1323"))
