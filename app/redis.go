@@ -20,15 +20,13 @@ func CreateRedisClient() (*RedisClient, error) {
 	}
 
 	client := redis.NewClient(opt)
-	ctx := context.TODO()
-	_, err = client.Ping(ctx).Result()
-	if err != nil {
-		return nil, err
-	}
-
 	return &RedisClient{
 		client: client,
 	}, nil
+}
+
+func (r *RedisClient) Ping(ctx context.Context) error {
+	return r.client.Ping(ctx).Err()
 }
 
 func (r *RedisClient) AddToStream(message *Message, streamTtl time.Duration) error {
