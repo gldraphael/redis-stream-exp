@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"net/http"
 	"os"
 	"time"
@@ -40,6 +41,20 @@ func main() {
 	if err != nil {
 		e.Logger.Fatalf("Failed to establish a redis connection. Error: %s", err.Error())
 	}
+
+	// Health check endpoints
+	healthCheck := func(c echo.Context) error {
+		ctx := context.Background()
+		if err := redis.Ping(ctx); err != nil {
+			return c.JSON(http.StatusServiceUnavailable, map[string]string{
+				"status": "unhealthy",
+				"error":  err.Error(),
+			})
+		}
+		return c.NoContent(http.StatusOK)
+	}
+	e.GET("/livez", healthCheck)
+	e.GET("/readyz", healthCheck)
 
 	// Endpoint to log a message
 	e.POST("/message", func(c echo.Context) error {
