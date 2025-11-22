@@ -4,6 +4,8 @@ import (
 	"context"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/google/uuid"
@@ -15,11 +17,6 @@ import (
 )
 
 func main() {
-	// Load configuration
-	config, err := LoadConfig("config.yaml")
-	if err != nil {
-		panic("Failed to load config: " + err.Error())
-	}
 
 	e := echo.New()
 	e.HideBanner = true
@@ -33,7 +30,13 @@ func main() {
 	)
 	e.Logger = logger
 
-	// Add request ID middleware (optional but recommended)
+	// Load configuration
+	config, err := LoadConfig("config.yaml")
+	if err != nil {
+		e.Logger.Fatalf("Failed to load config. Error: %v", err)
+	}
+
+	// Add request ID middleware
 	e.Use(middleware.RequestID())
 
 	// Add lecho middleware for request logging
@@ -44,7 +47,7 @@ func main() {
 
 	redis, err := CreateRedisClient(config.Redis.ConnectionString)
 	if err != nil {
-		e.Logger.Fatalf("Failed to establish a redis connection. Error: %s", err.Error())
+		e.Logger.Fatalf("Failed to establish a redis connection. Error: %v", err)
 	}
 
 	// Health check endpoints
@@ -123,5 +126,34 @@ func main() {
 		})
 	})
 
-	e.Logger.Fatal(e.Start(config.Server.Port))
+	// Start server in a goroutine
+	go func() {
+		e.Logger.Info("Starting server")
+		if err := e.Start(config.Server.Port); err != nil && err != http.ErrServerClosed {
+			e.Logger.Fatalf("Forcefully shutting down the server. Error: %v", err)
+		}
+	}()
+
+	// Wait for interrupt signal to gracefully shutdown the server
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
+	<-quit
+
+	e.Logger.Info("Shutting down server...")
+
+	// Create shutdown context with timeout
+	ctx, cancel := context.WithTimeout(context.Background(), config.Server.ShutdownTimeout)
+	defer cancel()
+
+	// Shutdown the server
+	if err := e.Shutdown(ctx); err != nil {
+		e.Logger.Fatalf("Graceful shutdown failed. Error: %v", err)
+	}
+
+	// Close Redis connection
+	if err := redis.Close(); err != nil {
+		e.Logger.Errorf("Failed to close the redis connection. Error: %v", err)
+	}
+
+	e.Logger.Info("Server shutdown complete")
 }

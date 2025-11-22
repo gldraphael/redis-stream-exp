@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/knadh/koanf/parsers/yaml"
 	"github.com/knadh/koanf/providers/file"
@@ -14,7 +15,8 @@ type Config struct {
 }
 
 type ServerConfig struct {
-	Port string `koanf:"port"`
+	Port            string        `koanf:"port"`
+	ShutdownTimeout time.Duration `koanf:"shutdown_timeout"`
 }
 
 type RedisConfig struct {
