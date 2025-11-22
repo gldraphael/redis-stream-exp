@@ -77,3 +77,7 @@ func (r *RedisClient) Query(
 	}
 	return messages, nil
 }
+
+func (r *RedisClient) Close() error {
+	return r.client.Close()
+}
