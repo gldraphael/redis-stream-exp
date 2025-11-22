@@ -15,6 +15,11 @@ import (
 )
 
 func main() {
+	// Load configuration
+	config, err := LoadConfig("config.yaml")
+	if err != nil {
+		panic("Failed to load config: " + err.Error())
+	}
 
 	e := echo.New()
 	e.HideBanner = true
@@ -37,7 +42,7 @@ func main() {
 		NestKey: "request",
 	}))
 
-	redis, err := CreateRedisClient()
+	redis, err := CreateRedisClient(config.Redis.ConnectionString)
 	if err != nil {
 		e.Logger.Fatalf("Failed to establish a redis connection. Error: %s", err.Error())
 	}
@@ -118,5 +123,5 @@ func main() {
 		})
 	})
 
-	e.Logger.Fatal(e.Start(":1323"))
+	e.Logger.Fatal(e.Start(config.Server.Port))
 }
