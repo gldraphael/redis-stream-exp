@@ -13,8 +13,8 @@ type RedisClient struct {
 	client *redis.Client
 }
 
-func CreateRedisClient() (*RedisClient, error) {
-	opt, err := redis.ParseURL("redis://localhost:6379")
+func CreateRedisClient(connectionString string) (*RedisClient, error) {
+	opt, err := redis.ParseURL(connectionString)
 	if err != nil {
 		return nil, err
 	}
