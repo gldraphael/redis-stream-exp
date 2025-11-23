@@ -49,7 +49,11 @@ func main() {
 	log.Logger = zerolog.New(zerolog.ConsoleWriter{Out: os.Stdout, TimeFormat: time.RFC3339}).With().Timestamp().Caller().Logger()
 
 	// Load configuration
-	config, err := LoadConfig("config.yaml")
+	configPath := os.Getenv("CONFIG_PATH")
+	if configPath == "" {
+		configPath = "config.yaml"
+	}
+	config, err := LoadConfig(configPath)
 	if err != nil {
 		log.Fatal().Err(err).Msg("Failed to load config")
 	}
