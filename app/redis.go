@@ -9,6 +9,29 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
+type Message struct {
+	UserId    uuid.UUID
+	SessionId uuid.UUID
+	Timestamp int64
+	Message   string
+}
+
+func streamName(userId uuid.UUID, sessionId uuid.UUID) string {
+	return userId.String() + "-" + sessionId.String()
+}
+
+func (m *Message) streamName() string {
+	return streamName(m.UserId, m.SessionId)
+}
+
+func streamID(timestamp int64) string {
+	return fmt.Sprintf("%d-0", timestamp)
+}
+
+func (m *Message) streamID() string {
+	return streamID(m.Timestamp)
+}
+
 type RedisClient struct {
 	client *redis.Client
 }
@@ -31,14 +54,14 @@ func (r *RedisClient) Ping(ctx context.Context) error {
 
 func (r *RedisClient) AddToStream(message *Message, streamTtl time.Duration) error {
 	ctx := context.TODO()
-	streamName := message.StreamName()
+	streamName := message.streamName()
 
 	_, err := r.client.XAdd(ctx, &redis.XAddArgs{
 		Stream: streamName,
 		Values: map[string]any{
 			"message": message.Message,
 		},
-		ID: message.StreamID(),
+		ID: message.streamID(),
 	}).Result()
 	if err != nil {
 		return err
@@ -60,8 +83,8 @@ func (r *RedisClient) Query(
 
 	ctx := context.TODO()
 
-	streamName := userId.String() + "-" + sessionId.String()
-	startID := fmt.Sprintf("%d-0", timestamp) // timestamp should be in ms
+	streamName := streamName(userId, sessionId)
+	startID := streamID(timestamp) // timestamp should be in ms
 	endID := "+"
 
 	res, err := r.client.XRange(ctx, streamName, startID, endID).Result()
