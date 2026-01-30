@@ -1,0 +1,22 @@
+meta {
+  name: GET message
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{base_url}}/message?userId={{user_id}}&sessionId={{session_id}}&timestamp=1
+  body: none
+  auth: inherit
+}
+
+params:query {
+  userId: {{user_id}}
+  sessionId: {{session_id}}
+  timestamp: 1
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
