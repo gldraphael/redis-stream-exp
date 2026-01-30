@@ -1,0 +1,9 @@
+{
+  "version": "1",
+  "name": "redis-stream-exp",
+  "type": "collection",
+  "ignore": [
+    "node_modules",
+    ".git"
+  ]
+}

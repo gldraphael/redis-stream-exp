@@ -8,8 +8,8 @@ export const options = {
       executor: "ramping-vus",
       startVUs: 1,
       stages: [
-        { target: 10, duration: "2s" },
-        { target: 100, duration: "0" }, // instantly jump to 100 VUs
+        { target:  10, duration:  "2s" },
+        { target: 100, duration:  "0s" }, // instantly jump to 100 VUs
         { target: 100, duration: "28s" }, // continue with 100 VUs for 28 seconds
       ],
     },
@@ -20,16 +20,18 @@ const userId = uuidv4();
 const sessionId = uuidv4();
 
 export default function () {
+  const headers = { "Content-Type": "application/json" };
+
   const postResponse = http.post(
     `http://localhost:1323/message`,
-    {
+    JSON.stringify({
       userId: userId,
       sessionId: sessionId,
       message: "Hello, World!",
-    },
-    { tags: { name: "post_message" } },
+    }),
+    { headers: headers, tags: { name: "post_message" } },
   );
-  check(postResponse, { "POST: /message: 202": (r) => r.status == 202 });
+  check(postResponse, { "POST: /message: 200": (r) => r.status == 200 });
 
   const getResponse = http.get(
     `http://localhost:1323/message?userId=${userId}&sessionId=${sessionId}&timestamp=${postResponse.json().timestamp}`,

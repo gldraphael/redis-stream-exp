@@ -1,0 +1,24 @@
+meta {
+  name: POST message
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{base_url}}/message
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "userId":    "{{user_id}}",
+    "sessionId": "{{session_id}}",
+    "message":   "timestamped hello world! 👋"
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
