@@ -2,7 +2,24 @@
 
 > Playing with redis streams :)
 
-## Install pre-requisites
+## Quickstart
+
+**Pre-requisites**: Docker or Podman
+
+```sh
+# Run services
+podman compose up --build
+
+# Run the k6 load test
+podman compose --profile k6 up
+
+# Tear down services
+podman compose down
+```
+
+## Dev environment setup
+
+### Install pre-requisites
 
 The following are required:
 
@@ -18,14 +35,16 @@ nvm install 25
 podman run -d --name redis -p 6379:6379 redis
 ```
 
-## Run the app
+### Run the app 
+
+Make sure redis is running on port 6379, then:
 
 ```sh
 cd app
 go run *.go
 ```
 
-## Run a load test
+### Run a load test 
 
 ```sh
 cd k6

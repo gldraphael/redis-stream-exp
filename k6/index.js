@@ -2,6 +2,8 @@ import http from "k6/http";
 import { check, sleep } from "k6";
 import { uuidv4 } from "https://jslib.k6.io/k6-utils/1.4.0/index.js";
 
+const BASE_URL = __ENV.BASE_URL || "http://localhost:1323";
+
 export const options = {
   scenarios: {
     contacts: {
@@ -23,7 +25,7 @@ export default function () {
   const headers = { "Content-Type": "application/json" };
 
   const postResponse = http.post(
-    `http://localhost:1323/message`,
+    `${BASE_URL}/message`,
     JSON.stringify({
       userId: userId,
       sessionId: sessionId,
@@ -34,7 +36,7 @@ export default function () {
   check(postResponse, { "POST: /message: 200": (r) => r.status == 200 });
 
   const getResponse = http.get(
-    `http://localhost:1323/message?userId=${userId}&sessionId=${sessionId}&timestamp=${postResponse.json().timestamp}`,
+    `${BASE_URL}/message?userId=${userId}&sessionId=${sessionId}&timestamp=${postResponse.json().timestamp}`,
     { tags: { name: "get_message" } },
   );
   check(getResponse, { "GET:  /message: 200": (r) => r.status == 200 });
