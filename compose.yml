@@ -1,0 +1,50 @@
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: stream-exp-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - redis-stream-net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  app:
+    build:
+      context: ./app
+      dockerfile: Dockerfile
+    container_name: stream-exp-app
+    ports:
+      - "8080:1323"
+    networks:
+      - redis-stream-net
+    environment:
+      - CONFIG_PATH=/app/config.yaml
+    volumes:
+      - ./config.yaml:/app/config.yaml:ro,z
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  k6:
+    build:
+      context: ./k6
+      dockerfile: Dockerfile
+    container_name: stream-exp-k6
+    networks:
+      - redis-stream-net
+    environment:
+      - BASE_URL=http://app:1323
+    depends_on:
+      - app
+    profiles:
+      - k6
+    command: run index.js
+
+networks:
+  redis-stream-net:
+    driver: bridge
