@@ -12,6 +12,7 @@ import (
 	"github.com/danielgtaylor/huma/v2/adapters/humachi"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/metrics"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
@@ -45,6 +46,15 @@ func main() {
 	router.Use(middleware.RealIP)
 	router.Use(middleware.Logger)
 	router.Use(middleware.Recoverer)
+	
+	// Metrics for incoming requests
+	router.Use(metrics.Collector(metrics.CollectorOpts{
+		Host:  false,
+		Proto: true,
+		Skip: func(r *http.Request) bool {
+			return r.Method != "OPTIONS"
+		},
+	}))
 
 	// Create Huma API
 	api := humachi.New(router, huma.DefaultConfig("redis-stream-exp", "0.1.0"))
@@ -62,7 +72,9 @@ func main() {
 	}
 	router.Get("/livez", healthCheck)
 	router.Get("/readyz", healthCheck)
-
+	
+	router.Get("/metrics", metrics.Handler().ServeHTTP)
+	
 	// Register message routes
 	RegisterAppRoutes(api, redis)
 
