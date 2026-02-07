@@ -9,6 +9,8 @@
 ```sh
 # Run services
 podman compose up --build
+# Open the grafana dashboard at http://localhost:3000
+# and login with admin / admin123
 
 # Run the k6 load test
 podman compose --profile k6 up
